@@ -12,6 +12,7 @@
 
 #define RU_MCC 250
 #define UA_MCC 255
+#define BY_MCC 257
 
 typedef struct mccmnc {
 	list_head list;
@@ -151,6 +152,8 @@ int main(int argc, char **argv)
 	if (getMcc(db, RU_MCC))
 		goto out;
 	if (getMcc(db, UA_MCC))
+		goto out;
+	if (getMcc(db, BY_MCC))
 		goto out;
 	mccmnc *v;
 	list_for_each_entry(v, &mccList, list) {
