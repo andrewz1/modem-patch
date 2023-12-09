@@ -139,7 +139,7 @@ int main(int argc, char **argv)
 {
 	if (argc != 2)
 		exitf("usage: %s db_file\n", argv[0]);
-	if (access(argv[1], R_OK|W_OK))
+	if (access(argv[1], R_OK | W_OK))
 		exitf("file %s: %m\n", argv[1]);
 	int rv = EXIT_FAILURE;
 	sqlite3 *db = dbOpen(argv[1]);
@@ -147,17 +147,18 @@ int main(int argc, char **argv)
 		return rv;
 	if (getTgt(db))
 		goto out;
-	infof("name:%s, id:%s, hash:%s\n", TARGET_ID, tgtId, tgtHash);
+	infof("target name '%s', id %s, hash '%s'\n", TARGET_ID, tgtId, tgtHash);
 	if (getMcc(db, RU_MCC))
 		goto out;
 	if (getMcc(db, UA_MCC))
 		goto out;
 	mccmnc *v;
 	list_for_each_entry(v, &mccList, list) {
-		infof("%s:%s\n", v->id, v->name);
+		infof("update record id %s, operator '%s'\n", v->id, v->name);
 		if (putMcc(db, v->id))
 			goto out;
 	}
+	infof("update default record id 0\n");
 	if (upd0Mcc(db))
 		goto out;
 	rv = EXIT_SUCCESS;
