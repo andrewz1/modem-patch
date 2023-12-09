@@ -1,0 +1,4 @@
+cfg.*
+*.o
+*.d
+modem-patch
