@@ -10,10 +10,12 @@
 #define ID_F (1 << 0)
 #define HASH_F (1 << 1)
 
+/*
 #define RU_MCC 250
 #define UA_MCC 255
 #define BY_MCC 257
 #define KZ_MCC 401
+*/
 
 typedef struct mccmnc {
 	list_head list;
@@ -28,7 +30,7 @@ static const char tgtReq[] = "SELECT DISTINCT confnames.carrier_id, confmap.conf
 
 static const char mccReq[] = "SELECT DISTINCT carrier_info.carrier_id, carrier_name.name "
 							 "FROM carrier_info, carrier_name "
-							 "WHERE carrier_info.mccmnc LIKE '%d%%' "
+							 "WHERE carrier_info.mccmnc LIKE '%s%%' "
 							 "AND carrier_info.carrier_id = carrier_name.carrier_id";
 
 static const char updReq[] = "INSERT OR IGNORE INTO confmap VALUES('%s', NULL, '%s')";
@@ -104,12 +106,12 @@ static int mccCb(void *data, int argc, char **argv, char **azColName)
 	return 0;
 }
 
-static int getMcc(sqlite3 *db, int mcc)
+static int getMcc(sqlite3 *db, const char *mcc)
 {
 	char sql[512];
 	sprintf(sql, mccReq, mcc);
 	if (sqlite3_exec(db, sql, mccCb, NULL, NULL) != SQLITE_OK) {
-		errorf("getMcc(%d): %s\n", mcc, sqlite3_errmsg(db));
+		errorf("getMcc(%s): %s\n", mcc, sqlite3_errmsg(db));
 		return -1;
 	}
 	return 0;
@@ -139,10 +141,12 @@ static int upd0Mcc(sqlite3 *db)
 
 int main(int argc, char **argv)
 {
-	if (argc != 2)
-		exitf("usage: %s db_file\n", argv[0]);
+	if (argc < 2)
+		exitf("usage: %s db_file [mcc list]\n", argv[0]);
 	if (access(argv[1], R_OK | W_OK))
 		exitf("file %s: %m\n", argv[1]);
+	if (argc == 2)
+		return 0;
 	int rv = EXIT_FAILURE;
 	sqlite3 *db = dbOpen(argv[1]);
 	if (!db)
@@ -150,13 +154,11 @@ int main(int argc, char **argv)
 	if (getTgt(db))
 		goto out;
 	infof("target name '%s', id %s, hash '%s'\n", TARGET_ID, tgtId, tgtHash);
-	if (getMcc(db, RU_MCC))
-		goto out;
-	if (getMcc(db, UA_MCC))
-		goto out;
-	if (getMcc(db, BY_MCC))
-		goto out;
-	if (getMcc(db, KZ_MCC))
+	int i;
+	for (i = 2; i < argc; i++)
+		if (getMcc(db, argv[i]))
+			break;
+	if (i < argc)
 		goto out;
 	mccmnc *v;
 	list_for_each_entry(v, &mccList, list) {
